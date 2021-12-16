@@ -28,7 +28,7 @@ const getLiveBadge = async (page: puppeteer.Page) => {
     if (thumbnails.length > 0) {
       for (let i = 0; i < thumbnails.length; i++) {
         const liveBadge = await page.$x(
-          `//div[@data-id="thumbnail"][${i}]/a/div[2][@data-testid="BaseBadge"]/span`
+          `//div[@data-id="thumbnail"][${i + 1}]/a/div[@data-testid="BaseBadge"]/span`
         );
         if (liveBadge.length > 0) {
           // const innerText = (await page.evaluate((el) => el.innerText, hasBadge[i])) as string; // should be 'LIVE'
