@@ -32,7 +32,7 @@ const getLiveBadge = async (page: puppeteer.Page) => {
         );
         if (liveBadge.length > 0) {
           // const innerText = (await page.evaluate((el) => el.innerText, hasBadge[i])) as string; // should be 'LIVE'
-          const url = await thumbnails[0].getProperty('href');
+          const url = await thumbnails[i].getProperty('href');
           urls.push(await url.jsonValue());
         }
       }
