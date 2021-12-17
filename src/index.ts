@@ -22,34 +22,96 @@ const mainActual = async () => {
 const getLiveBadge = async (page: puppeteer.Page) => {
   // $x(`//div[@data-testid="BaseBadge"]`)
   // $x(`//div[@data-id="thumbnail"]/a/div[2][@data-testid="BaseBadge"]`)
-  const urls = [];
+  const results = [];
   try {
     const thumbnails = await page.$x(`//div[@data-id="thumbnail"]/a`);
     if (thumbnails.length > 0) {
       for (let i = 0; i < thumbnails.length; i++) {
-        const liveBadge = await page.$x(
+        const result: { [x: string]: any } = {};
+
+        // getting video url
+        const videoUrl = await thumbnails[i].getProperty('href');
+        result.videoUrl = await videoUrl.jsonValue();
+
+        result.live = false;
+        const liveBadgeEls = await page.$x(
           `//div[@data-id="thumbnail"][${i + 1}]/a/div[@data-testid="BaseBadge"]/span`
         );
-        if (liveBadge.length > 0) {
-          // const innerText = (await page.evaluate((el) => el.innerText, hasBadge[i])) as string; // should be 'LIVE'
-          const url = await thumbnails[i].getProperty('href');
-          urls.push(await url.jsonValue());
+        if (liveBadgeEls.length > 0) {
+          result.live = true;
         }
+
+        result.imgUrl = '';
+        const imgEls = await page.$x(`//div[@data-id="thumbnail"][${i + 1}]/a/div/div/img`);
+        if (imgEls.length > 0) {
+          const imgUrl = await imgEls[0].getProperty('src');
+          result.imgUrl = await imgUrl.jsonValue();
+        }
+
+        // channel info
+        const channelLinkEls = await page.$x(`//div[@data-id="thumbnail"][${i + 1}]/div/div/a`);
+        const channelUrl = await channelLinkEls[0].getProperty('href');
+        result.channelUrl = await channelUrl.jsonValue();
+
+        const channelNameEls = await page.$x(
+          `//div[@data-id="thumbnail"][${i + 1}]/div/div/a/div/div[2]`
+        );
+        if (channelNameEls.length > 0) {
+          const channelName = (await page.evaluate(
+            (el) => el.innerText,
+            channelNameEls[0]
+          )) as string;
+          result.channelName = channelName;
+        }
+
+        const videoTitleEls = await page.$x(
+          `//div[@data-id="thumbnail"][${i + 1}]/div/div/a/div/div[1]`
+        );
+        if (videoTitleEls.length > 0) {
+          const videoTitle = (await page.evaluate(
+            (el) => el.innerText,
+            videoTitleEls[0]
+          )) as string;
+          result.videoTitle = videoTitle;
+        }
+
+        results.push(result);
       }
     }
   } catch (error: any) {
     console.log('err getLiveBadge', error.message);
   }
-  return urls;
+  return results;
+};
+
+const autoScroll = async (page: puppeteer.Page) => {
+  await page.evaluate(async () => {
+    await new Promise<void>((resolve, _reject) => {
+      var totalHeight = 0;
+      var distance = 100;
+      var timer = setInterval(() => {
+        var scrollHeight = document.body.scrollHeight;
+        window.scrollBy(0, distance);
+        totalHeight += distance;
+
+        if (totalHeight >= scrollHeight) {
+          clearInterval(timer);
+          resolve();
+        }
+      }, 100);
+    });
+  });
 };
 
 const main = async () => {
   const page = await mainActual();
   if (!page) process.exit();
 
-  const urls = await getLiveBadge(page);
-  console.log({ urls });
-  process.exit();
+  await autoScroll(page);
+  const results = await getLiveBadge(page);
+  console.log({ results });
+
+  process.exit(); //close browser and exit
 };
 
 main();
