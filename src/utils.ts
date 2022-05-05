@@ -15,7 +15,7 @@ export const launch = async (headless: boolean): Promise<puppeteer.Browser> => {
 export const newPage = async (browser: puppeteer.Browser, url: string): Promise<puppeteer.Page> => {
   try {
     const page = await browser.newPage();
-    await page.setDefaultNavigationTimeout(0);
+    page.setDefaultNavigationTimeout(0);
 
     await page.setViewport({
       width: 1280,
